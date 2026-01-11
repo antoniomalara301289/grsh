@@ -1,4 +1,4 @@
-GRSH - Grim Reaper Shell (v0.1.0) 💀
+GRSH - Grim Reaper SHell (v0.1.0) 💀
 GRSH è una shell Unix-like avanzata scritta in Rust. Non è solo un interprete di comandi, ma un ambiente di lavoro intelligente che integra automazione del workflow, intelligenza artificiale e un'interfaccia utente moderna.
 
 🌟 Funzionalità Esclusive
