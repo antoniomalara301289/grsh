@@ -1,0 +1,40 @@
+# --- Path e Variabili ---
+setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Ghostty.app/Contents/MacOS:/Users/antoniomalara/.cargo/bin
+setenv EDITOR  nano
+setenv VISUAL  nano
+setenv PAGER   less
+# In ~/.grshrc
+# 1. Scriviamo la prima parte del comando in un file (senza andare a capo)
+echo -n "setenv HOSTNAME " > /tmp/load_host.grsh
+
+# 2. Appendiamo l'output di hostname direttamente alla fine di quel file
+hostname -s >> /tmp/load_host.grsh
+
+# 3. Carichiamo il file risultante
+source /tmp/load_host.grsh
+
+rm /tmp/load_host.grsh
+
+# --- Configurazione Colori LS ---
+setenv CLICOLOR 1
+setenv LSCOLORS gxBxhxDxfxhxhxhxhxcxcx
+setenv PKG_SSH_ARGS "-tt"
+setenv CLICOLOR_FORCE 1
+setenv GRSH_CURSOR 5
+
+# --- Alias ---
+alias h        history 25
+alias ls       ls -G
+alias ll       ls -lAFG
+alias check_fs "tunefs -p /dev/gpt/rootfs"
+alias pkg "pkg -o COLOR=always"
+
+# --- CONFIGURAZIONE INTERATTIVA GRSH ---
+if ($?prompt) then
+    # Prompt Colorato
+    set prompt = "%{\033[1;31m%}%n%{\033[1;32m%}@%m%{\033[0m%}:%{\033[1;36m%}%~%{\033[0m%}%# "
+    set filec
+    set history = 1000
+    set autolist = ambiguous
+    bindkey "^I" complete-word
+endif
