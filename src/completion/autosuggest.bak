@@ -1,0 +1,74 @@
+use rustyline::completion::Completer;
+use rustyline::highlight::Highlighter;
+use rustyline::hint::{Hint, Hinter};
+use rustyline::history::SearchDirection;
+use rustyline::validate::Validator;
+use rustyline::{Context, Helper};
+use std::process::Command;
+
+#[derive(Clone)]
+pub struct GrayHint {
+    pub text: String,
+}
+
+impl Hint for GrayHint {
+    fn display(&self) -> &str {
+        &self.text
+    }
+    fn completion(&self) -> Option<&str> {
+        Some(&self.text)
+    }
+}
+
+#[derive(Default)]
+pub struct GrshHinter;
+
+impl Completer for GrshHinter {
+    type Candidate = String;
+}
+
+impl Hinter for GrshHinter {
+    type Hint = GrayHint;
+
+    fn hint(&self, line: &str, _pos: usize, ctx: &Context<'_>) -> Option<GrayHint> {
+        if line.is_empty() {
+            return None;
+        }
+
+        let history = ctx.history();
+        let len = history.len();
+
+        for i in (0..len).rev() {
+            if let Ok(Some(entry)) = history.get(i, SearchDirection::Forward) {
+                let s = &entry.entry;
+
+                if s.starts_with(line) && s.len() > line.len() {
+                    let rest = s[line.len()..].to_string();
+
+                    // Se vuoi aggiungere colore verde ai comandi esistenti,
+                    // fallo qui sul testo del suggerimento.
+                    let cmd = line.split_whitespace().next().unwrap_or("");
+                    let colored_rest = if Command::new(cmd).output().is_ok() {
+                        format!("\x1b[32m{}\x1b[0m", rest) // verde
+                    } else {
+                        format!("\x1b[90m{}\x1b[0m", rest) // grigio
+                    };
+
+                    return Some(GrayHint { text: colored_rest });
+                }
+            }
+        }
+
+        None
+    }
+}
+
+impl Highlighter for GrshHinter {
+    fn highlight_hint<'l>(&self, hint: &'l str) -> std::borrow::Cow<'l, str> {
+        // Non serve più fare nulla: il colore è già incluso in GrayHint.text
+        std::borrow::Cow::Borrowed(hint)
+    }
+}
+
+impl Validator for GrshHinter {}
+impl Helper for GrshHinter {}
