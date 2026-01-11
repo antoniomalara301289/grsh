@@ -64,6 +64,8 @@ if ($?prompt) then
     set prompt = "%{\033[1;31m%}%n%{\033[1;32m%}@%m%{\033[0m%}:%{\033[1;36m%}%~%{\033[0m%}%# "
 endif
 
+Configurazione rapida: Per usare la configurazione di default, copia il file d'esempio nella tua home: cp grshrc.example ~/.grshrc
+
 📖 Tabella dei Comandi
 Categoria	Comandi
 AI	? <domanda>
