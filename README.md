@@ -74,5 +74,12 @@ Filesystem	cd, pwd, mkcd
 Redirection	>, >>, <, `
 Utility	calc, which, sysinfo, alias, source
 
+macOS (Homebrew)
+
+🚀 Installazione
+Puoi installare grsh su MacOS usando il mio tap:
+brew tap antoniomalara301289/tap
+brew install grsh
+
 👨‍💻 Autore
 Antonio Malara - Progetto GRSH v0.1.0
