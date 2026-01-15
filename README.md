@@ -41,18 +41,21 @@ To enable AI and PDF features, ensure these dependencies are installed:
 ```bash
 brew tap antoniomalara301289/tap
 brew install grsh
+```
 
 **Via GIT (FreeBSD/Linux...)**
 ```bash
 git clone [https://github.com/antoniomalara301289/grsh](https://github.com/antoniomalara301289/grsh)
 cd grsh
 cargo build --release
+```
 
 ### 3. Configuration (~/.grshrc)
 GRSH uses a .grshrc file for customization.
 **Quick Start:**
 ```bash
 cp grshrc.example ~/.grshrc
+```
 
 **Configuration Example (.grshrc):**
 ```bash
@@ -69,6 +72,7 @@ rm /tmp/load_host.grsh
 # Aliases & Visuals
 alias ls ls -G
 set prompt = "%{\033[1;31m%}%n%{\033[1;32m%}@%m%{\033[0m%}:%{\033[1;36m%}%~%{\033[0m%}%# "
+```
 
 ### 🚀 Technical Specifications
 • Pipe & Redirect: Full support for |, >, >>, and <.
