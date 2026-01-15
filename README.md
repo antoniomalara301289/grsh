@@ -1,85 +1,92 @@
-GRSH - Grim Reaper SHell (v0.1.0) 💀
-GRSH è una shell Unix-like avanzata scritta in Rust. Non è solo un interprete di comandi, ma un ambiente di lavoro intelligente che integra automazione del workflow, intelligenza artificiale e un'interfaccia utente moderna.
+# GRSH - Grim Reaper SHell (v0.1.0) 💀
 
-🌟 Funzionalità Esclusive
-🤖 Intelligenza Artificiale Integrata
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![Rust](https://img.shields.io/badge/Language-Rust-orange.svg)](https://www.rust-lang.org/)
 
-GRSH supporta l'assistenza IA nativa tramite tgpt.
+**GRSH** is an advanced Unix-like shell written in **Rust**. It is designed as an intelligent workflow environment that integrates native automation, AI assistance, and a modern terminal UI.
 
-Basta iniziare un comando con ? per interrogare l'IA direttamente dalla shell.
+Originally built with a **FreeBSD-first** philosophy, it works seamlessly on **macOS** and other BSD-based systems.
 
-Esempio: ? come posso comprimere una cartella in tar.gz?
+---
 
-📄 Smart Redirection (Auto-PDF)
+## 🌟 Key Features
 
-La shell gestisce i redirect in modo intelligente in base all'estensione del file:
+### 🤖 Native AI Integration
+GRSH features built-in AI assistance powered by `tgpt`.
+* Start any command with `?` to query the AI directly from the shell.
+* **Example:** `? how can I compress a folder to tar.gz?`
 
-Standard: ls > output.txt crea un normale file di testo.
+### 📄 Smart Redirection (Auto-PDF)
+The shell handles output redirection based on the file extension:
+* **Standard:** `ls > output.txt` creates a regular text file.
+* **Smart:** `ls > output.pdf` automatically triggers an internal pipeline using `enscript` and `ps2pdf` to generate a formatted PDF document.
 
-Smart: ls > output.pdf attiva automaticamente una pipeline interna che usa enscript e ps2pdf per generare un documento PDF formattato partendo dall'output del comando.
+### 🔍 Modern UI & UX
+* **Advanced Tab-Completion:** Intelligent suggestions for commands and file paths.
+* **Interactive Scroll Menu:** Navigate suggestions using arrow keys.
+* **Syntax Highlighting:** Real-time command coloring as you type.
 
-🔍 UI Moderna & Autocomplete
+---
 
-Tab-Completion Avanzato: Autocompletamento intelligente dei comandi e dei percorsi.
+## 🛠️ Installation & Setup
 
-Menu Scorrevole: Navigazione dei suggerimenti tramite le frecce direzionali per una selezione rapida e intuitiva.
+### 1. Prerequisites
+To enable AI and PDF features, ensure these dependencies are installed:
+* **[tgpt](https://github.com/a7ul/tgpt)** (for AI support)
+* **enscript** & **ghostscript** (for PDF generation)
 
-🚀 Caratteristiche Tecniche
-Pipe & Redirect: Supporto completo a |, >, >>, e <.
+### 2. Install GRSH
 
-Job Control: Gestione nativa dei processi con jobs, fg, e il comando zap per la pulizia totale.
+**Via Homebrew (macOS):**
+```bash
+brew tap antoniomalara301289/tap
+brew install grsh
 
-Built-in Potenziati: calc (calcolatrice), mkcd (crea e entra), sysinfo (stato sistema), alias, e source.
-
-Prompt Dinamico: Integrazione Git (branch e stato), indicatore job attivi e path abbreviato.
-
-🛠️ Installazione e Dipendenze
-Dipendenze di Sistema
-
-Per il funzionamento delle feature avanzate, installa:
-
-tgpt: Per il supporto AI (?).
-
-enscript & ghostscript (ps2pdf): Per la generazione automatica dei PDF.
-
-Compilazione
+**Via GIT (FreeBSD/Linux...)**
+```bash
+git clone [https://github.com/antoniomalara301289/grsh](https://github.com/antoniomalara301289/grsh)
+cd grsh
 cargo build --release
 
-⚙️ Configurazione Dinamica (~/.grshrc)
-GRSH permette di usare i propri redirect per auto-configurarsi. Ecco come gestisce l'hostname dinamico nel tuo .grshrc:
+### 3. Configuration (~/.grshrc)
+GRSH uses a .grshrc file for customization.
+**Quick Start:**
+```bash
+cp grshrc.example ~/.grshrc
 
-# Setup dell'ambiente
-setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/antoniomalara/.cargo/bin
+**Configuration Example (.grshrc):**
+```bash
+# Environment Setup
+setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.cargo/bin
 setenv EDITOR nano
 
-# Bootstrap dinamico dell'hostname (Senza modificare il codice Rust)
+# Dynamic Hostname Bootstrap (Example of GRSH scripting power)
 echo -n "setenv HOSTNAME " > /tmp/load_host.grsh
 hostname -s >> /tmp/load_host.grsh
 source /tmp/load_host.grsh
 rm /tmp/load_host.grsh
 
-# Alias e Prompt
+# Aliases & Visuals
 alias ls ls -G
-if ($?prompt) then
-    set prompt = "%{\033[1;31m%}%n%{\033[1;32m%}@%m%{\033[0m%}:%{\033[1;36m%}%~%{\033[0m%}%# "
-endif
+set prompt = "%{\033[1;31m%}%n%{\033[1;32m%}@%m%{\033[0m%}:%{\033[1;36m%}%~%{\033[0m%}%# "
 
-Configurazione rapida: Per usare la configurazione di default, copia il file d'esempio nella tua home: cp grshrc.example ~/.grshrc
+### 🚀 Technical Specifications
+• Pipe & Redirect: Full support for |, >, >>, and <.
+• Job Control: Native management with jobs, fg, and the zap command.
+• Enhanced Built-ins: calc, mkcd, sysinfo, alias, and source.
+• Dynamic Prompt: Integrated Git status (branch/state) and job indicators.
 
-📖 Tabella dei Comandi
-Categoria	Comandi
-AI	? <domanda>
-Jobs	jobs, fg [id], zap
-Filesystem	cd, pwd, mkcd
-Redirection	>, >>, <, `
-Utility	calc, which, sysinfo, alias, source
+### 📖 Command Reference
 
-macOS (Homebrew)
+| Category | Commands |
+| :--- | :--- |
+| **AI** | `? <question>` |
+| **Jobs** | `jobs`, `fg [id]`, `zap` |
+| **Filesystem** | `cd`, `pwd`, `mkcd` |
+| **Redirection** | `>`, `>>`, `<`, `|` |
+| **Utility** | `calc`, `which`, `sysinfo`, `alias`, `source` |
 
-🚀 Installazione
-Puoi installare grsh su MacOS usando il mio tap:
-brew tap antoniomalara301289/tap
-brew install grsh
+### 👨‍💻 Author
+Antonio Malara - Lead Developer
+Project GRSH v0.1.0
 
-👨‍💻 Autore
-Antonio Malara - Progetto GRSH v0.1.0
