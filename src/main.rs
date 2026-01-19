@@ -64,7 +64,7 @@ fn run_line(line: String) -> bool {
     {
         let mut skip = SKIP_BLOCK.lock().unwrap();
         if raw_line.starts_with("endif") { *skip = false; return true; }
-        if raw_line.starts_with("if") {
+        if raw_line == "if" || raw_line.starts_with("if ") {
             *skip = !raw_line.contains("$?prompt");
             return true;
         }
