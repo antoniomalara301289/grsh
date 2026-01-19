@@ -198,30 +198,35 @@ impl Completer for GrshCompleter {
         };
 
         if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().to_string();
-                
-                if name.starts_with(prefix) {
-                    let is_dir = entry.path().is_dir();
-                    
-                    let mut value = if dir == std::path::Path::new(".") && !current.starts_with("./") && !current.starts_with('/') {
-                        name
-                    } else {
-                        let mut base = dir.to_string_lossy().to_string();
-                        if !base.ends_with('/') { base.push('/'); }
-                        format!("{}{}", base, name)
-                    };
+           for entry in entries.flatten() {
+               let name = entry.file_name().to_string_lossy().to_string();
 
-                    if is_dir {
-                        value.push('/');
-                    }
+            if name.starts_with(prefix) {
+               let is_dir = entry.path().is_dir();
+               let final_name = if name.contains(' ') {
+                   format!("\"{}\"", name)
+            } else {
+        name.clone()
+        };
 
-                    out.push(Suggestion {
-                        value,
-                        span: Span::new(last_sep, pos),
-                        append_whitespace: !is_dir,
-                        ..Default::default()
-                    });
+        let mut value = if dir == std::path::Path::new(".") && !current.starts_with("./") && !current.starts_with('/') {
+               final_name
+        } else {
+               let mut base = dir.to_string_lossy().to_string();
+               if !base.ends_with('/') { base.push('/'); }
+               format!("{}{}", base, final_name)
+        };
+
+             if is_dir {
+                value.push('/');
+             }
+
+             out.push(Suggestion {
+                value, // Ora 'value' contiene i backslash corretti
+                span: Span::new(last_sep, pos),
+                append_whitespace: !is_dir,
+                ..Default::default()
+            });
                 }
             }
         }

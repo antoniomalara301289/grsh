@@ -1,4 +1,4 @@
-# GRSH - Grim Reaper SHell (v0.1.0) 💀
+# GRSH - Grim Reaper SHell (v0.1.1) 💀
 
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Rust](https://img.shields.io/badge/Language-Rust-orange.svg)](https://www.rust-lang.org/)
@@ -90,7 +90,10 @@ set prompt = "%{\033[1;31m%}%n%{\033[1;32m%}@%m%{\033[0m%}:%{\033[1;36m%}%~%{\03
 | **Redirection** | `>`, `>>`, `<`, `|` |
 | **Utility** | `calc`, `which`, `sysinfo`, `alias`, `source` |
 
+### 📜 Changelog
+Check the [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes in every version.
+
 ### 👨‍💻 Author
 Antonio Malara - Lead Developer
-Project GRSH v0.1.0
+Project GRSH v0.1.1
 

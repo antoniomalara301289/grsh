@@ -105,7 +105,7 @@ pub fn handle_builtin(cmd: &str, args: &[&str]) -> bool {
         }
 
         "version" => {
-            println!("grsh (Grim Reaper SHell) version 0.1.0");
+            println!("grsh (Grim Reaper SHell) version 0.1.1");
             println!("{}", Color::Red.bold().paint("Reaper is watching you! 😈"));
             true
         }
@@ -113,13 +113,19 @@ pub fn handle_builtin(cmd: &str, args: &[&str]) -> bool {
         // --- NAVIGAZIONE ---
         "cd" => {
             let home = env::var("HOME").unwrap_or_else(|_| "/".into());
-            let target = args.get(0).copied().unwrap_or(&home);
-            if let Err(e) = env::set_current_dir(target) {
-                eprintln!("grsh: cd: {}: {}", target, e);
+    
+            // Se ci sono più argomenti, li uniamo con uno spazio
+            let full_path = if args.is_empty() {
+                    home
+            } else {
+                    args.join(" ") 
+            };
+
+            if let Err(e) = env::set_current_dir(&full_path) {
+                    eprintln!("grsh: cd: {}: {}", full_path, e);
             }
             true
         }
-
         "pwd" => {
             if let Ok(cwd) = env::current_dir() { 
                 println!("{}", cwd.display()); 
@@ -204,7 +210,7 @@ pub fn handle_builtin(cmd: &str, args: &[&str]) -> bool {
         "sysinfo" => {
             println!("{}", Color::Cyan.bold().paint("--- Reaper System Info ---"));
             println!("OS:           {} ({})", env::consts::OS, env::consts::ARCH);
-            println!("Shell:       grsh v0.1.0");
+            println!("Shell:       grsh v0.1.1");
             println!("Uptime:      {}s", SHELL_START_TIME.elapsed().as_secs());
             true
         }

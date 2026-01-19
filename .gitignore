@@ -1,1 +1,16 @@
+# Compilazione Rust
 /target
+**/*.rs.bk
+
+# File di backup manuali (quelli che abbiamo visto prima)
+*.bak
+*.swp
+*~
+
+# File di sistema e OS
+.DS_Store
+.Thumbs.db
+
+# File di log o cronologia locale
+.grsh_history
+*.log/target

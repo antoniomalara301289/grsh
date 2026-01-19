@@ -54,7 +54,15 @@ pub struct GrshPrompt;
 impl Prompt for GrshPrompt {
     fn render_prompt_left(&self) -> Cow<'_, str> {
         let user = env::var("USER").unwrap_or_else(|_| "user".into());
-        let host = env::var("HOSTNAME").unwrap_or_else(|_| "server".into());
+        
+        // --- PATCH HOSTNAME ---
+        let host = Command::new("hostname")
+            .arg("-s")
+            .output()
+            .ok()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+            .unwrap_or_else(|| "freebsd".into());
+        // ----------------------
         
         let current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("/"));
         let mut pwd = current_dir.display().to_string();
@@ -72,7 +80,7 @@ impl Prompt for GrshPrompt {
         let git_color = Color::Fixed(208).bold(); // Arancione
         let job_color = Color::Yellow.bold();
 
-        // --- PATCH: Info sui JOB sospesi ---
+        // Info sui JOB sospesi
         let jobs_count = state::get_jobs().len();
         let job_info = if jobs_count > 0 {
             format!("{} ", job_color.paint(format!("[{}]", jobs_count)))
@@ -87,7 +95,7 @@ impl Prompt for GrshPrompt {
 
         let prompt = format!(
             "{}{}{}{} {}{} ➜ ",
-            job_info, // Qui appare [1] se hai un job sospeso
+            job_info,
             user_color.paint(user),
             at_host_color.paint("@"),
             at_host_color.paint(host),

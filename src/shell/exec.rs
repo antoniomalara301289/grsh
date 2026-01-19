@@ -1,6 +1,6 @@
 use std::process::{Command, Stdio, Child};
 use std::fs::{OpenOptions, File};
-use crate::shell::{alias, state}; // Aggiunto state qui
+use crate::shell::{alias, state};
 use glob::glob;
 use std::os::unix::process::CommandExt;
 
@@ -8,7 +8,7 @@ use nix::sys::signal::{sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal
 use nix::unistd::{self, Pid};
 use nix::sys::wait::{waitpid, WaitStatus, WaitPidFlag};
 
-// ... smart_split rimane identico ...
+// --- Funzione smart_split ---
 fn smart_split(line: &str) -> Vec<String> {
     let mut args = Vec::new();
     let mut current = String::new();
@@ -19,15 +19,31 @@ fn smart_split(line: &str) -> Vec<String> {
             '"' if !in_single_quotes => in_double_quotes = !in_double_quotes,
             '\'' if !in_double_quotes => in_single_quotes = !in_single_quotes,
             ' ' if !in_double_quotes && !in_single_quotes => {
-                if !current.is_empty() { args.push(current.clone()); current.clear(); }
+                if !current.is_empty() {
+                    args.push(current.clone());
+                    current.clear();
+                }
             }
             _ => current.push(c),
         }
     }
-    if !current.is_empty() { args.push(current); }
+    if !current.is_empty() {
+        args.push(current);
+    }
     args
 }
 
+// --- Funzione per integrazione main.rs ---
+pub fn execute_with_args(program: &str, args: &[&str]) -> bool {
+    let mut cmd = Command::new(program);
+    cmd.args(args);
+    match cmd.status() {
+        Ok(status) => status.success(),
+        Err(_) => false,
+    }
+}
+
+// --- Funzione execute principale ---
 pub fn execute(line: &str) -> bool {
     if line.contains(" && ") {
         let parts: Vec<&str> = line.splitn(2, " && ").collect();
@@ -71,7 +87,7 @@ pub fn execute(line: &str) -> bool {
         let expanded_chunk = resolve_single_command_alias(&current_chunk);
         let raw_parts = smart_split(&expanded_chunk);
         if raw_parts.is_empty() { continue; }
-        
+
         let parts = expand_globs(raw_parts.iter().map(|s| s.as_str()).collect());
         let program = &parts[0];
         let args = &parts[1..];
@@ -95,14 +111,11 @@ pub fn execute(line: &str) -> bool {
             })
         };
 
-        let stdout;
-        let stderr;
-
+        let (stdout, stderr);
         if let Some((ref filename, append)) = file_out_redirect {
             let file_result = OpenOptions::new()
                 .create(true).write(true).append(append).truncate(!append)
                 .open(filename);
-            
             match file_result {
                 Ok(f) => {
                     let f2 = f.try_clone().expect("Clone file handle failed");
@@ -117,11 +130,11 @@ pub fn execute(line: &str) -> bool {
             }
         } else if !is_last {
             stdout = Stdio::piped();
-            stderr = Stdio::piped(); 
+            stderr = Stdio::piped();
         } else {
             stdout = Stdio::inherit();
             stderr = Stdio::inherit();
-        };
+        }
 
         let mut cmd = Command::new(program);
         cmd.args(args).stdin(stdin).stdout(stdout).stderr(stderr);
@@ -133,7 +146,6 @@ pub fn execute(line: &str) -> bool {
                 let _ = sigaction(Signal::SIGTSTP, &default_action);
                 let _ = sigaction(Signal::SIGQUIT, &default_action);
                 let _ = sigaction(Signal::SIGTTOU, &default_action);
-
                 let pid = unistd::getpid();
                 let _ = unistd::setpgid(pid, pid);
                 Ok(())
@@ -143,18 +155,13 @@ pub fn execute(line: &str) -> bool {
         match cmd.spawn() {
             Ok(mut child) => {
                 let child_pid = Pid::from_raw(child.id() as i32);
-
                 if is_last {
                     let _ = unistd::tcsetpgrp(nix::libc::STDIN_FILENO, child_pid);
-                    
                     loop {
                         match waitpid(child_pid, Some(WaitPidFlag::WUNTRACED)) {
                             Ok(WaitStatus::Stopped(_, _)) => {
-                                // --- PATCH: AGGIUNTA AL JOB CONTROL ---
-                                // Salviamo il comando completo o solo il nome del programma
                                 let full_command = parts.join(" ");
                                 state::add_job(child_pid.as_raw(), full_command);
-                                // Non impostiamo last_status perché il processo non è finito
                                 break;
                             }
                             Ok(WaitStatus::Exited(_, status)) => {
@@ -172,10 +179,9 @@ pub fn execute(line: &str) -> bool {
                             _ => continue,
                         }
                     }
-                    
+                    // IMPORTANTE: Riprende il controllo del terminale per evitare il freeze
                     let shell_pgid = unistd::getpgrp();
                     let _ = unistd::tcsetpgrp(nix::libc::STDIN_FILENO, shell_pgid);
-                    
                 } else {
                     previous_child = Some(child);
                 }
@@ -191,7 +197,6 @@ pub fn execute(line: &str) -> bool {
     last_status
 }
 
-// ... Resto del file (expand_globs, execute_as_pdf, resolve_single_command_alias) rimane invariato ...
 fn expand_globs(parts: Vec<&str>) -> Vec<String> {
     let mut expanded = Vec::new();
     for part in parts {
@@ -205,7 +210,7 @@ fn expand_globs(parts: Vec<&str>) -> Vec<String> {
                 if !found { expanded.push(part.to_string()); }
             } else { expanded.push(part.to_string()); }
         } else {
-            expanded.push(part.trim_matches('\'').trim_matches('"').to_string());
+            expanded.push(part.trim_matches(|c| c == '\'' || c == '"').to_string());
         }
     }
     expanded
@@ -234,7 +239,7 @@ fn resolve_single_command_alias(cmd_part: &str) -> String {
     if parts.is_empty() { return cmd_part.to_string(); }
     let resolved = alias::resolve_alias(parts[0]);
     if resolved != parts[0] {
-        let clean_resolved = resolved.trim_matches('"').trim_matches('\'');
+        let clean_resolved = resolved.trim_matches(|c| c == '\'' || c == '"');
         if parts.len() > 1 { format!("{} {}", clean_resolved, parts[1..].join(" ")) } else { clean_resolved.to_string() }
     } else {
         cmd_part.to_string()

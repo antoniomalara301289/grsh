@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
 use std::io::{self, Write, IsTerminal};
+use std::os::unix::io::AsRawFd;
 
 // Import necessari per la patch TTY e Segnali
 use nix::sys::signal::{sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal};
@@ -76,6 +77,7 @@ fn run_line(line: String) -> bool {
 
     let expanded_line = state::expand_env_vars(&raw_line);
 
+    // Gestione Pipes e Redirezioni
     if expanded_line.contains('|') || expanded_line.contains('>') || 
        expanded_line.contains('<') || expanded_line.contains(" && ") {
         let success = exec::execute(&expanded_line.replace("|&", "|"));
@@ -127,8 +129,12 @@ fn run_line(line: String) -> bool {
         },
         "exit" | "quit" => std::process::exit(0),
         _ => {
-            if builtins::handle_builtin(cmd, &args) { true } 
-            else { exec::execute(&expanded_line) }
+            if builtins::handle_builtin(cmd, &args) { 
+                true 
+            } else { 
+                // QUI C'ERA L'ERRORE: usa execute per mantenere il job control
+                exec::execute(&expanded_line) 
+            }
         }
     };
 
@@ -149,24 +155,18 @@ fn run_file(path: &str) {
 }
 
 fn main() {
-    // --- PATCH TTY E SEGNALI ALL'AVVIO ---
     let is_atty = io::stdin().is_terminal();
 
     if is_atty {
         unsafe {
-            // 1. Ignoriamo i segnali di scrittura sul terminale (TTOU) per evitare 
-            // di essere sospesi mentre prendiamo il controllo
             let ignore_action = SigAction::new(SigHandler::SigIgn, SaFlags::empty(), SigSet::empty());
             let _ = sigaction(Signal::SIGTTOU, &ignore_action);
             let _ = sigaction(Signal::SIGINT, &ignore_action);
             let _ = sigaction(Signal::SIGTSTP, &ignore_action);
             let _ = sigaction(Signal::SIGQUIT, &ignore_action);
 
-            // 2. Ci mettiamo in un nostro gruppo di processi (PGID)
             let shell_pid = unistd::getpid();
             let _ = unistd::setpgid(shell_pid, shell_pid);
-
-            // 3. Prendiamo ufficialmente il controllo del terminale (Foreground)
             let _ = unistd::tcsetpgrp(io::stdin().as_raw_fd(), shell_pid);
         }
     }
@@ -189,7 +189,6 @@ fn main() {
     for line in grshrc::load() { run_line(line); }
 
     let term = std::env::var("TERM").unwrap_or_default();
-    
     apply_cursor_style(get_preferred_cursor());
     
     if !is_atty || term == "" || term == "dumb" {
@@ -198,7 +197,3 @@ fn main() {
         repl_loop(run_line);
     }
 }
-
-// Nota: Aggiunto as_raw_fd() per tcsetpgrp. 
-// Assicurati di avere `use std::os::unix::io::AsRawFd;` se il compilatore lo richiede
-use std::os::unix::io::AsRawFd;
