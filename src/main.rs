@@ -75,10 +75,20 @@ fn run_line(line: String) -> bool {
         return true;
     }
 
-    let expanded_line = state::expand_env_vars(&raw_line);
+    let mut expanded_line = state::expand_env_vars(&raw_line);
+
+    // --- PATCH ALIAS: Risoluzione immediata ---
+    let first_word = expanded_line.split_whitespace().next().unwrap_or("").to_string();
+    {
+        let aliases = ALIASES.lock().unwrap();
+        if let Some(alias_value) = aliases.get(&first_word) {
+            expanded_line = expanded_line.replacen(&first_word, alias_value, 1);
+        }
+    }
+    // ------------------------------------------
 
     // Gestione Pipes e Redirezioni
-    if expanded_line.contains('|') || expanded_line.contains('>') || 
+    if expanded_line.contains('|') || expanded_line.contains('>') ||
        expanded_line.contains('<') || expanded_line.contains(" && ") {
         let success = exec::execute(&expanded_line.replace("|&", "|"));
         state::set_exit_status(success);
@@ -87,13 +97,13 @@ fn run_line(line: String) -> bool {
 
     let parts = split_args(&expanded_line);
     if parts.is_empty() { return true; }
-    
+
     let cmd = parts[0].as_str();
     let args: Vec<&str> = parts.iter().skip(1).map(|s| s.as_str()).collect();
 
     let success = match cmd {
         "source" => {
-            if let Some(path) = args.first() { run_file(path); true } 
+            if let Some(path) = args.first() { run_file(path); true }
             else { eprintln!("grsh: source: specificare un file"); false }
         },
         "echo" => {
@@ -103,7 +113,7 @@ fn run_line(line: String) -> bool {
                 .map(|&a| a.trim_matches('"').trim_matches('\'').to_string())
                 .collect();
             let output = msg.join(" ");
-            if is_n { print!("{}", output); let _ = io::stdout().flush(); } 
+            if is_n { print!("{}", output); let _ = io::stdout().flush(); }
             else { println!("{}", output); }
             true
         },
@@ -129,11 +139,10 @@ fn run_line(line: String) -> bool {
         },
         "exit" | "quit" => std::process::exit(0),
         _ => {
-            if builtins::handle_builtin(cmd, &args) { 
-                true 
-            } else { 
-                // QUI C'ERA L'ERRORE: usa execute per mantenere il job control
-                exec::execute(&expanded_line) 
+            if builtins::handle_builtin(cmd, &args) {
+                true
+            } else {
+                exec::execute(&expanded_line)
             }
         }
     };
@@ -190,7 +199,7 @@ fn main() {
 
     let term = std::env::var("TERM").unwrap_or_default();
     apply_cursor_style(get_preferred_cursor());
-    
+
     if !is_atty || term == "" || term == "dumb" {
         return;
     } else {
